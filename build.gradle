@@ -75,3 +75,5 @@ gretty {
     servletContainer = 'jetty9.4'
     contextPath = '/'
 }
+
+bootRepackage.enabled = false
