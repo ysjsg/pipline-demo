@@ -1,0 +1,77 @@
+buildscript {
+    ext {
+        springBootVersion = '1.5.6.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+//        maven {
+//            url 'http://10.200.107.56:8081/artifactory/plugins-snapshot'
+//        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.akhikhl.gretty:gretty:+")
+//        classpath("org.jfrog.buildinfo:build-info-extractor-gradle:3.+")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+//apply plugin: 'maven'
+apply plugin: 'org.springframework.boot'
+//apply plugin: "com.jfrog.artifactory"
+apply plugin: 'war'
+apply plugin: 'org.akhikhl.gretty'
+
+version = project.hasProperty('build_number') ? project.properties['build_number'] : '0.1'
+
+//jar {
+//    baseName = 'dsone-pipeline-test'
+//    manifest {
+//        attributes 'Main-Class': 'com.derbysoft.dsone.DemoApp'
+//    }
+//}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Dalston.SR4'
+    }
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-web')
+    providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
+    testCompile('junit:junit:4.12')
+}
+
+//artifactory {
+//    contextUrl = "${artifactory_contextUrl}"
+//    publish {
+//        repository {
+//            repoKey = 'libs-snapshot-local'
+//            maven = true
+//        }
+//        defaults {
+//            publishConfigs('archives')
+//        }
+//    }
+//    resolve {
+//        repository {
+//            repoKey = 'libs-snapshot'
+//            maven = true
+//        }
+//    }
+//}
+
+gretty {
+    httpPort = 8080
+    servletContainer = 'jetty9.4'
+    contextPath = '/'
+}

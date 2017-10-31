@@ -1,0 +1,51 @@
+- hosts: server_dev
+  remote_user: root
+  vars:
+    http_port: 80
+    app_name: dsone-pipeline-test
+    upload_dir: /home/upload
+    tomcat_home: /usr/local/webapps
+    backup_machine_ip: 10.200.107.53
+    backup_machine_dir: /home/upload/backup
+    datetime_str: $(date +"%Y%m%d%H%M")
+    wildcard_file: "{{ lookup('pipe', 'ls -1 build/libs/*.war') }}"
+  tasks:
+  - name: Backup step
+    shell: echo 'Backup step starts...'
+  - name: Tar files
+    shell: tar -cvf {{upload_dir}}/{{app_name}}/backup/{{app_name}}.{{datetime_str}}.tar.gz {{tomcat_home}}/{{app_name}}
+  - name: Backup files to remote machine
+    shell: scp {{upload_dir}}/{{app_name}}/backup/{{app_name}}.{{datetime_str}}.tar.gz root@{{backup_machine_ip}}:{{backup_machine_dir}}
+    ignore_errors: yes
+
+  - name: Deploy step
+    shell: echo 'Deploy step starts...'
+  - name: Delete latest upload files
+#    file: path={{upload_dir}}/{{app_name}}/latest state=absent
+    shell: rm -rf {{upload_dir}}/{{app_name}}/latest/*
+  - name: Upload file
+    copy: src={{wildcard_file}} dest={{upload_dir}}/{{app_name}} owner=upload group=upload
+  - name: Copy file to history
+    shell: cp {{upload_dir}}/{{app_name}}/*.war {{upload_dir}}/{{app_name}}/history/
+  - name: Move file to lastest
+    shell: mv {{upload_dir}}/{{app_name}}/*.war {{upload_dir}}/{{app_name}}/latest/{{app_name}}.war
+  - name: Delete webapps file
+    shell: rm -rf {{tomcat_home}}/{{app_name}}/*
+  - name: Unarchive file
+    unarchive:
+      src: /home/upload/dsone-pipeline-test/latest/dsone-pipeline-test.war
+#      src: /home/upload/dsone-pipeline-test/dsone-pipeline-test-20171027.49.war
+      dest: /usr/local/webapps/dsone-pipeline-test
+      remote_src: yes
+      group: upload
+      owner: upload
+
+  - name: Server step
+    shell: echo 'Server step starts...'
+#  - name: Tomcat stop
+#    shell: /usr/local/platform/tomcat/bin/stopmd
+#    ignore_errors: yes
+#  - name: Tomcat start
+#    shell: /usr/local/platform/tomcat/bin/startmd
+#  - name: wait for tomcat to start
+#    wait_for: port=8080
